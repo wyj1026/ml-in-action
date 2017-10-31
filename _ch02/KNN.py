@@ -1,7 +1,6 @@
 from numpy import *
 import operator
-import matplotlib
-import matplotlib.pyplot as plt
+
 
 def filetomatrix(f):
     target_file = open(f)
@@ -14,10 +13,11 @@ def filetomatrix(f):
     for line in lines:
         line = line.strip()
         list_from_line = line.split('\t')
-        matrix[index:] = list_from_line[0:3]
+        matrix[index, :] = list_from_line[0:3]
         vector.append(int(list_from_line[-1]))
         index += 1
     return matrix, vector
+
 
 def auto_norm(data):
 
@@ -31,6 +31,7 @@ def auto_norm(data):
     target_data_set = target_data_set/tile(ranges, (size, 1))
     return target_data_set, ranges, min_values
 
+
 def data_test():
     data_matrix, data_vector = filetomatrix("./Ch02/datingTestSet2.txt")
     data_matrix, ranges, min_values = auto_norm(data_matrix)
@@ -42,10 +43,12 @@ def data_test():
     print("The total test size is %d, and the error rate is %f" \
         % (data_matrix.shape[0], error_count/data_matrix.shape[0]))
 
+
 def create_data_set():
     group = array([[1.0, 1.1], [1.0, 1.0],[0, 0],[0, 0.1]])
     labels = ['A', 'A', 'B', 'B']
     return group, labels
+
 
 # This method receives a test case, dataset, corresbonding labels, and the k.
 def classfy0(inX, dataSet, labels, k):
@@ -73,12 +76,5 @@ def classfy0(inX, dataSet, labels, k):
     return scC[0][0]
 
 
-data_matrix, data_vector = filetomatrix("./Ch02/datingTestSet2.txt")
-data_matrix = auto_norm(data_matrix)[0]
-fig = plt.figure()
-ax = fig.add_subplot(111)
 
-# Draw with first and second column
-ax.scatter(data_matrix[:,1], data_matrix[:,2], 15*array(data_vector), 15*array(data_vector))
-plt.show()
 data_test()
