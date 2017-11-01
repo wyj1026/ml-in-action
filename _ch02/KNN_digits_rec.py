@@ -1,5 +1,6 @@
 from numpy import *
-import KNN
+from os import listdir
+from KNN import classfy0
 
 def img2vector(file):
     res = zeros((1,1024))
@@ -16,8 +17,25 @@ def handwriting_recognization():
     training_list = listdir('./Ch02/trainingDigits/')
     training_matrix = zeros((len(training_list), 1024))
     for i in range(len(training_list)):
-        number =
-        hw_labels[i] = number
-        training_matrix[i,:] = img2vector(filename)
+        file_name = training_list[i]
+        file_str = file_name.split('.')[0]
+        number = int(file_str.split('_')[0])
+        hw_labels.append(number)
+        training_matrix[i,:] = img2vector('./Ch02/trainingDigits/' + file_name)
 
-print(img2vector('./Ch02/testDigits/0_13.txt'))
+    print(training_matrix.shape[0])
+    test_list = listdir('./Ch02/testDigits')
+    error_count = 0
+    test_size = len(test_list)
+    for i in range(test_size):
+        file_name = test_list[i]
+        file_str = file_name.split('.')[0]
+        number = int(file_str.split('_')[0])
+        vector2test = img2vector('./Ch02/testDigits/' + file_name)
+        result = classfy0(vector2test, training_matrix, hw_labels, 3)
+        # print('The classifier came back with %d, the real answer is %d' %(result, number))
+        if number != result:
+              error_count +=1
+    print('The erro rate is %f' % (error_count/test_size))
+#print(img2vector('./Ch02/testDigits/0_13.txt'))
+handwriting_recognization()
