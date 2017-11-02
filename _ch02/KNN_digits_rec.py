@@ -37,5 +37,5 @@ def handwriting_recognization():
         if number != result:
               error_count +=1
     print('The erro rate is %f' % (error_count/test_size))
-#print(img2vector('./Ch02/testDigits/0_13.txt'))
+#print(img2vector('./Ch,2/testDigits/0_13.txt'))
 handwriting_recognization()
