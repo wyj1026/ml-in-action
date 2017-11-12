@@ -27,7 +27,7 @@ def split_data(data_set, pos, value):
     for vector in data_set:
         if vector[pos] == value:
             reduced_vector = vector[:pos]
-            reduced_vector.extend(vector[pos+1:])
+            reduced_vector.extend(vector[pos + 1:])
             target_data_set.append(reduced_vector)
     return target_data_set
 
@@ -48,8 +48,8 @@ def choose_best_feature(data_set):
         new_entropy = 0
         for value in unique_feature:
             sub_data_set = split_data(data_set, i, value)
-            prob = len(sub_data_set)/float(len(data_set))
-            new_entropy += prob*calc_shannon_entropy(sub_data_set)
+            prob = len(sub_data_set) / float(len(data_set))
+            new_entropy += prob * calc_shannon_entropy(sub_data_set)
         info_gain = entropy - new_entropy
         if (info_gain > best_info_gain):
             best_info_gain = info_gain
@@ -63,8 +63,8 @@ def get_majority(l):
         if vote not in class_count.keys():
             class_count[vote] = 0
         class_count[vote] += 1
-    sorted_class_count = sorted(class_count.items(),
-        key=operator.itemgetter(1), reverse=Tre)
+    sorted_class_count = sorted(
+        class_count.items(), key=operator.itemgetter(1), reverse=Tre)
     return sorted_class_count[0][0]
 
 
@@ -87,7 +87,8 @@ def create_tree(data_set, labels):
     unique_feature_values = set(feature_values)
     for value in unique_feature_values:
         sub_labels = labels[:]
-        my_tree[best_feature_label][value] = create_tree(split_data(data_set, best_feature, value), sub_labels)
+        my_tree[best_feature_label][value] = create_tree(
+            split_data(data_set, best_feature, value), sub_labels)
         print(split_data(data_set, best_feature, value))
     return my_tree
 
@@ -99,8 +100,7 @@ def classify(tree, labels, test_vector):
     for key in second_dict.keys():
         if test_vector[feature_index] == keys:
             if type(second_dict[key]).__name__ == 'dict':
-                class_label = classify(second_dict[key],
-                    labels, test_vector)
+                class_label = classify(second_dict[key], labels, test_vector)
             else:
                 class_label = second_dict[key]
     return class_label
