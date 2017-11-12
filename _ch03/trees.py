@@ -49,11 +49,11 @@ def choose_best_feature(data_set):
         for value in unique_feature:
             sub_data_set = split_data(data_set, i, value)
             prob = len(sub_data_set)/float(len(data_set))
-            new_entropy = prob*calc_shannon_entropy(sub_data_set)
-            info_gain = entropy - new_entropy
-            if (info_gain > best_info_gain):
-                best_info_gain = info_gain
-                best_feature = i
+            new_entropy += prob*calc_shannon_entropy(sub_data_set)
+        info_gain = entropy - new_entropy
+        if (info_gain > best_info_gain):
+            best_info_gain = info_gain
+            best_feature = i
     return best_feature
 
 
@@ -70,16 +70,18 @@ def get_majority(l):
 
 def create_tree(data_set, labels):
     class_list = [example[-1] for example in data_set]
+
+    # All instances belongs to the same calss.
     if class_list.count(class_list[0]) == len(class_list):
         return class_list[0]
+
+    # There is no feature left.
     if len(data_set[0]) == 1:
         return get_majority(class_list)
     best_feature = choose_best_feature(data_set)
     best_feature_label = labels[best_feature]
     print("\nChoose %d feature, label: %s\n" %( best_feature, best_feature_label))
     my_tree = {best_feature_label: {}}
-    print("The tree:")
-    print(my_tree)
     del(labels[best_feature])
     feature_values = [example[best_feature] for example in data_set]
     unique_feature_values = set(feature_values)
@@ -88,3 +90,29 @@ def create_tree(data_set, labels):
         my_tree[best_feature_label][value] = create_tree(split_data(data_set, best_feature, value), sub_labels)
         print(split_data(data_set, best_feature, value))
     return my_tree
+
+
+def classify(tree, labels, test_vector):
+    first_str = tree.keys()[0]
+    second_dict = tree[first_str]
+    feature_index = labels.index(first_str)
+    for key in second_dict.keys():
+        if test_vector[feature_index] == keys:
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key],
+                    labels, test_vector)
+            else:
+                class_label = second_dict[key]
+    return class_label
+
+
+def store_tree(tree, filename):
+    import pickle
+    with open(filename, 'w') as f:
+        pickle.dump(tree, f)
+
+
+def grab_tree(filename):
+    import pickle
+    with open(filename) as f:
+        return pickle.load(f)

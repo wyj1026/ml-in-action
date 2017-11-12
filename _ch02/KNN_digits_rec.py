@@ -38,4 +38,8 @@ def handwriting_recognization():
               error_count +=1
     print('The erro rate is %f' % (error_count/test_size))
 #print(img2vector('./Ch,2/testDigits/0_13.txt'))
+
+import time
+start_time = time.time()
 handwriting_recognization()
+print("----%d seconds ----" %(time.time() - start_time))
