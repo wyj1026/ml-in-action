@@ -44,21 +44,23 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
 
             # Calculate g(xi) Page 129 KKK requirement
             # which also means the predict label of data_matrix[i]
-            fXi = float(multiply(alphas, label_matrix).T* (data_matrix * data_matrix[i, :].T)) + b
+            fXi = float(multiply(alphas, label_matrix).T* \
+                (data_matrix * data_matrix[i, :].T)) + b
 
             # Calculate error_rate
             Ei = fXi - float(label_matrix[i])
-            print(Ei)
 
             # We hava to alphas if the result is far beyond the toler
-            if ((label_matrix[i] * Ei < -1 * toler) and
-                (alphas[i] < C)) or ((label_matrix[i] * Ei > toler) and (alphas[i] > 0)):
+            if ((label_matrix[i] * Ei < -toler) and
+                (alphas[i] < C)) or ((label_matrix[i] * Ei > toler) and \
+                (alphas[i] > 0)):
 
                 # Choose the second variable
                 j = select(i, m)
 
                 print("%d, %d choosed\n" %(i, j))
-                fXj = float(multiply(alphas, label_matrix).T * (data_matrix * data_matrix[j, :].T)) + b
+                fXj = float(multiply(alphas, label_matrix).T * \
+                    (data_matrix * data_matrix[j, :].T)) + b
                 Ej = fXj - float(label_matrix[j])
 
                 # Store the old alphas
@@ -66,7 +68,7 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
                 alphaJ_old = alphas[j].copy();
                 if (label_matrix[i] != label_matrix[j]):
                     L = max(0, alphas[j] - alphas[i])
-                    H = min(C, C + alphas[i] - alphas[j])
+                    H = min(C, C + alphas[j] - alphas[i])
                 else:
                     L = max(0, alphas[i] + alphas[j] -C)
                     H = min(C, alphas[j] + alphas[i])
@@ -74,7 +76,9 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
                     continue
 
                 # Page 128
-                eta = 2 * data_matrix[i, :] * data_matrix[j, :].T - data_matrix[i, :] * data_matrix[i, :].T - data_matrix[j, :] * data_matrix[j, :].T
+                eta = 2.0 * data_matrix[i, :] * data_matrix[j, :].T \
+                    - data_matrix[i, :] * data_matrix[i, :].T \
+                    - data_matrix[j, :] * data_matrix[j, :].T
                 if eta >= 0:
                     continue
 
@@ -83,7 +87,8 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
                 alphas[j] = clip_alpha(alphas[j], H, L)
                 if abs(alphas[j] - alphaJ_old) < 0.00001:
                     continue
-                alphas[i] += label_matrix[j] * label_matrix[i] * (alphaJ_old - alphas[j])
+                alphas[i] += label_matrix[j] * label_matrix[i] *\
+                    (alphaJ_old - alphas[j])
                 
                 # Update b
                 b1 = b - Ei - label_matrix[i] * (alphas[i] - alphaI_old)*data_matrix[i, :]*data_matrix[i, :].T - label_matrix[j] * (alphas[j] - alphaJ_old) * data_matrix[i, :] *data_matrix[j,:].T
@@ -96,11 +101,11 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
                     b = (b1 + b2) / 2.0
                 alpha_pairs_changed += 1
                 print("iter: %d i :%d, pairs change %d" %(iter, i , alpha_pairs_changed))
-                if (alpha_pairs_changed == 0):
-                    iter += 1
-                else:
-                    iter = 0;
-                print("iteration number: %d" % iter)
+        if (alpha_pairs_changed == 0):
+            iter += 1
+        else:
+            iter = 0;
+        print("iteration number: %d" % iter)
     return b, alphas
 
 
