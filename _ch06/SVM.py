@@ -1,5 +1,14 @@
 from numpy import *
+from os import listdir
 
+def img2vector(file):
+    res = zeros((1, 1024))
+    with open(file) as f:
+        for i in range(32):
+            line = f.readline()
+            for j in range(32):
+                res[0, 32 * i + j] = int(line[j])
+    return res
 
 def load_data(filename):
     data_matrix = []
@@ -111,7 +120,7 @@ def simple_SMO(data_matrix, label_matrix, C, toler, max_iter):
 
 
 class SMO:
-    def __init__(self, data_matrix, label_matrix, C, toler):
+    def __init__(self, data_matrix, label_matrix, C, toler, k_tup):
         self.X = data_matrix
         self.label_matrix = label_matrix
         self.C = C
@@ -120,11 +129,15 @@ class SMO:
         self.alphas = mat(zeros((self.m, 1)))
         self.b = 0
         self.e_cache = mat(zeros((self.m, 2)))
+        self.K = mat(zeros((self.m, self.m)))
+        for i in range(self.m):
+            self.K[:,i] = kernel_trans(self.X, self.X[i, :], k_tup)
+
 
 
 def calc_EK(ob, i):
     fXk = float(multiply(ob.alphas, ob.label_matrix).T * \
-        (ob.X * ob.X[i,:].T)) + ob.b
+        ob.K[:,i] + ob.b)
     return fXk - float(ob.label_matrix[i])
 
 
@@ -171,8 +184,7 @@ def inner_loop(i, ob):
             H = min(ob.C, ob.alphas[j] + ob.alphas[i])
         if L == H:
             return 0
-        eta = 2.0 * ob.X[i,:] * ob.X[j,:].T - ob.X[i, :] * ob.X[i, :].T - \
-            ob.X[j, :] * ob.X[j, :].T
+        eta = 2.0 * ob.K[i,j] - ob.K[i,i] - ob.K[j,j] 
         if eta >= 0:
             return 0
 
@@ -186,11 +198,11 @@ def inner_loop(i, ob):
         update_EK(ob, i)
 
         b1 = ob.b - Ei - ob.label_matrix[i] * (ob.alphas[i] - alphaI_old) * \
-            ob.X[i, :] * ob.X[i, :].T - ob.label_matrix[j] * \
-            (ob.alphas[j] -alphaJ_old) * ob.X[i, :] * ob.X[j, :].T
+            ob.K[i,i] - ob.label_matrix[j] * \
+            (ob.alphas[j] -alphaJ_old) * ob.K[i,j]
         b2 = ob.b - Ej - ob.label_matrix[i] * (ob.alphas[i] - alphaI_old) * \
-            ob.X[i, :] * ob.X[j, :].T - ob.label_matrix[j] * \
-            (ob.alphas[j] -alphaJ_old) * ob.X[j, :] * ob.X[j, :].T
+            ob.K[i,j] - ob.label_matrix[j] * \
+            (ob.alphas[j] -alphaJ_old) * ob.K[j,j]
         if (0 < ob.alphas[i]) and (ob.C > ob.alphas[i]):
             ob.b = b1
         elif (0 < ob.alphas[j]) and (ob.C > ob.alphas[j]):
@@ -203,7 +215,7 @@ def inner_loop(i, ob):
 
 
 def smo_platt(data_matrix, label_matrix, C, toler, max_iter, k_tup=('lin', 0)):
-    ob = SMO(mat(data_matrix), mat(label_matrix).transpose(), C, toler)
+    ob = SMO(mat(data_matrix), mat(label_matrix).transpose(), C, toler, k_tup)
     iter = 0
     entire_set = True
     alpha_pairs_changed = 0
@@ -214,14 +226,14 @@ def smo_platt(data_matrix, label_matrix, C, toler, max_iter, k_tup=('lin', 0)):
             for i in range(ob.m):
                 alpha_pairs_changed += inner_loop(i, ob)
                 print("full set , iter :%d i:%d, pairs changed %d" % \
-                        (iter, i, alpha_pairs_changed))
+                       (iter, i, alpha_pairs_changed))
             iter += 1
         else:
             non_bound = nonzero((ob.alphas.A > 0) * (ob.alphas.A < C))[0]
             for i in non_bound:
                 alpha_pairs_changed += inner_loop(i, ob)
-                print("non-bound iter %d i:%d, pairs changed %d" %\
-                            (iter, i, alpha_pairs_changed))
+                print("non_bound  , iter :%d i:%d, pairs changed %d" % \
+                       (iter, i, alpha_pairs_changed))
             iter += 1
         if entire_set:
             entire_set = False
@@ -240,9 +252,58 @@ def calculate_w(alphas, data, label):
     return w
 
 
-d, l = load_data('./Ch06/testSet.txt')
-b, alphas = smo_platt(d, l, 0.6, 0.001, 40)
-w = calculate_w(alphas, d, l)
-print(b, w)
+def kernel_trans(X, A, k_tup):
+    m, n = shape(X)
+    K = mat(zeros((m,1)))
+    if k_tup[0] == 'lin':
+        K = X * A.T
+    elif k_tup[0] == 'rbf':
+        for j in range(m):
+            delta_row = X[j, :] - A
+            K[j] = delta_row * delta_row.T
+        K = exp(K/(-1*k_tup[1]**2))
+    else:
+        raise NameError('Kernel is not recognized')
+    return K
 
+
+def load_images(dir_name):
+    hw_labels = []
+    training_list = listdir(dir_name)
+    training_matrix = zeros((len(training_list), 1024))
+    for i in range(len(training_list)):
+        file_name = training_list[i]
+        file_str = file_name.split('.')[0]
+        number = int(file_str.split('_')[0])
+        if number == 9:
+            hw_labels.append(-1)
+        else:
+            hw_labels.append(1)
+        training_matrix[i, :] = img2vector('%s/%s' %(dir_name, file_name))
+    return training_matrix, hw_labels
+
+
+def test_digits(k_tup=('rbf',10)):
+    d, l = load_images('./Ch06/trainingDigits')
+    b, alphas = smo_platt(d, l, 200, 0.0001, 10000, k_tup)
+    data_mat = mat(d)
+    label_mat = mat(l).transpose()
+    sv = nonzero(alphas.A>0)[0]
+    svs = data_mat[sv]
+    label_sv = label_mat[sv]
+    print('there is %d SV' % (shape(svs)[0]))
+
+    d, l = load_images('./Ch06/testDigits')
+    data_mat = mat(d)
+    label_mat = mat(l).transpose()
+    m, n = shape(data_mat)
+    error_counter = 0
+    for i in range(m):
+        kernel_eval = kernel_trans(svs, data_mat[i,:], k_tup)
+        predict = kernel_eval.T * multiply(label_sv, alphas[sv]) + b
+        if (sign(predict)) != sign(l[i]):
+            error_counter += 1
+    print("The error_rate is %f" % (float(error_counter)/m))
+
+test_digits()
 
